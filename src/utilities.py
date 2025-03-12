@@ -27,7 +27,7 @@ def wnid2category(wnid, language):
         lines = f.readlines()
         for line in lines:
             if wnid in line:
-                return line.split()[1]
+                return line
     raise ValueError(f"Could not find wnid: {wnid}")
 
 

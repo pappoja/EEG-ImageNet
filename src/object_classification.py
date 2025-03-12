@@ -85,13 +85,22 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--output_dir", required=True, help="directory to save results")
     args = parser.parse_args()
     print(args)
-
+    print('Loading dataset...')
     dataset = EEGImageNetDataset(args)
+    print('Dataset loaded, length:', len(dataset))
+    print('Stacking EEG data...')
     eeg_data = np.stack([i[0].numpy() for i in dataset], axis=0)
+    print('EEG data stacked, shape:', eeg_data.shape)
     # extract frequency domain features
+    print('Calculating differential entropy features...')
     de_feat = de_feat_cal(eeg_data, args)
+    print('DE features calculated, shape:', de_feat.shape)
+    print('Adding frequency features to dataset...')
     dataset.add_frequency_feat(de_feat)
+    print('Frequency features added')
+    print('Getting labels...')
     labels = np.array([i[1] for i in dataset])
+    print('Labels shape:', labels.shape)
     train_index = np.array([i for i in range(len(dataset)) if i % 50 < 30])
     test_index = np.array([i for i in range(len(dataset)) if i % 50 > 29])
     train_subset = Subset(dataset, train_index)
@@ -104,6 +113,7 @@ if __name__ == '__main__':
     if args.pretrained_model:
         model.load_state_dict(torch.load(os.path.join(args.output_dir, str(args.pretrained_model))))
     if if_simple:
+        print(f'Training {args.model} model...')
         train_labels = labels[train_index]
         test_labels = labels[test_index]
         train_feat = de_feat[train_index]
@@ -111,6 +121,7 @@ if __name__ == '__main__':
         model.fit(train_feat, train_labels)
         y_pred = model.predict(test_feat)
         acc = accuracy_score(test_labels, y_pred)
+        print('Test accuracy:', acc)
         with open(os.path.join(args.output_dir, "simple.txt"), "a") as f:
             f.write(f"{acc}")
             f.write("\n")

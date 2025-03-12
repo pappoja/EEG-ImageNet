@@ -1,7 +1,7 @@
 n02106662	German shepherd, German shepherd dog, German police dog, alsatian
 n02124075   Egyptian cat
 n02281787	lycaenid, lycaenid butterfly
-n02389026	sorrel
+n02389026	horse, sorrel
 n02492035	capuchin, ringtail, Cebus capucinus
 n02504458	African elephant, Loxodonta africana
 n02510455	giant panda, panda, panda bear, coon bear, Ailuropoda melanoleuca
