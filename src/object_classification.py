@@ -83,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--pretrained_model", help="pretrained model")
     parser.add_argument("-s", "--subject", default=0, type=int, help="subject from 0 to 15")
     parser.add_argument("-o", "--output_dir", required=True, help="directory to save results")
+    parser.add_argument("--use_cv", action="store_true", help="use cross-validation for simple models (default: False)")
     args = parser.parse_args()
     print(args)
     print('Loading dataset...')
@@ -109,7 +110,8 @@ if __name__ == '__main__':
     if args.pretrained_model:
         model.load_state_dict(torch.load(os.path.join(args.output_dir, str(args.pretrained_model))))
     if if_simple:
-        print(f'Training {args.model} model...')
+        cv_mode = "with cross-validation" if args.use_cv else "without cross-validation"
+        print(f'Training {args.model} model {cv_mode}...')
         train_labels = labels[train_index]
         test_labels = labels[test_index]
         train_feat = de_feat[train_index]
@@ -119,7 +121,7 @@ if __name__ == '__main__':
         acc = accuracy_score(test_labels, y_pred)
         print('Test accuracy:', acc)
         with open(os.path.join(args.output_dir, "simple.txt"), "a") as f:
-            f.write(f"{acc}")
+            f.write(f"{args.model.upper()} Test Accuracy: {acc} (subject={args.subject}, granularity={args.granularity})")
             f.write("\n")
     else:
         if args.model.lower() == 'eegnet':
