@@ -70,7 +70,7 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
         if acc > max_acc:
             max_acc = acc
             max_acc_epoch = epoch
-            torch.save(model.state_dict(), os.path.join(args.output_dir, f'eegnet_s{args.subject}_1x_22.pth'))
+            torch.save(model.state_dict(), os.path.join(args.output_dir, f'{args.model}_s{args.subject}_1x_22.pth'))
     return max_acc, max_acc_epoch
 
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     print('EEG data loaded with shape:', eeg_data.shape)
     # extract frequency domain features
     de_feat = de_feat_cal(eeg_data, args)
-    print('Differntial entropy features calculated, shape:', de_feat.shape)
+    print('Differential entropy features calculated, shape:', de_feat.shape)
     dataset.add_frequency_feat(de_feat)
     print('Frequency features added')
     labels = np.array([i[1] for i in dataset])
@@ -105,7 +105,8 @@ if __name__ == '__main__':
 
     simple_model_list = ['svm', 'rf', 'knn', 'dt', 'ridge']
     if_simple = args.model.lower() in simple_model_list
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # ADDED
     model = model_init(args, if_simple, len(dataset) // 50, device)
     if args.pretrained_model:
         model.load_state_dict(torch.load(os.path.join(args.output_dir, str(args.pretrained_model))))

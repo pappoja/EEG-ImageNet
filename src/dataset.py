@@ -9,7 +9,7 @@ class EEGImageNetDataset(Dataset):
     def __init__(self, args, transform=None):
         self.dataset_dir = args.dataset_dir
         self.transform = transform
-        loaded = torch.load(os.path.join(args.dataset_dir, "EEG-ImageNet.pth"))
+        loaded = torch.load(os.path.join(args.dataset_dir, "EEG-ImageNet.pth"), weights_only=False) # ADDED
         self.labels = loaded["labels"]
         self.images = loaded["images"]
         if args.subject != -1:
