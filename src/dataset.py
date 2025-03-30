@@ -21,6 +21,8 @@ class EEGImageNetDataset(Dataset):
             self.data = [i for i in chosen_data if i['granularity'] == 'coarse']
         elif args.granularity == 'all':
             self.data = chosen_data
+        elif args.granularity == 'fine':
+            self.data = [i for i in chosen_data if i['granularity'] == 'fine']
         else:
             fine_num = int(args.granularity[-1])
             fine_category_range = np.arange(8 * fine_num, 8 * fine_num + 8)
