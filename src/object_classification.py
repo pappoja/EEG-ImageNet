@@ -149,5 +149,5 @@ if __name__ == '__main__':
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
                                     labels)
         with open(os.path.join(args.output_dir, "eegnet.txt"), "a") as f:
-            f.write(f"{epoch}: {acc}")
+            f.write(f"{args.model.upper()} Test Accuracy: {acc} (epoch={epoch},subject={args.subject}, granularity={args.granularity})")
             f.write("\n")
