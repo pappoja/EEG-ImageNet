@@ -5,6 +5,7 @@ import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
 from dataset import EEGImageNetDataset
 from de_feat_cal import de_feat_cal
 from model.simple_model import SimpleModel
@@ -29,6 +30,20 @@ def model_init(args, if_simple, num_classes, device):
     return _model
 
 
+def plot_accuracies(train_accs, val_accs, max_val_acc_epoch, save_path):
+    plt.figure(figsize=(10, 6))
+    epochs = range(1, len(train_accs) + 1)
+    plt.plot(epochs, train_accs, 'b-', label='Training Accuracy')
+    plt.plot(epochs, val_accs, 'r-', label='Validation Accuracy')
+    plt.axvline(x=max_val_acc_epoch + 1, color='black', linestyle='--', label=f'Best Val Acc ({max(val_accs):.2%})')
+    plt.title(f'{args.model.lower()}: Training vs. Validation Accuracy (Subject {args.subject})')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(save_path)
+    plt.close()
+
 def model_main(args, model, train_loader, test_loader, criterion, optimizer, num_epochs, device, labels):
     model = model.to(device)
     unique_labels = torch.from_numpy(labels).unique()
@@ -38,8 +53,15 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
     max_acc = 0.0
     max_acc_epoch = -1
     report_batch = len(train_loader) / 2
+    
+    train_accuracies = []
+    val_accuracies = []
+    
     for epoch in tqdm(range(num_epochs)):
         model.train()
+        train_correct = 0
+        train_total = 0
+        
         for batch_idx, (inputs, labels) in enumerate(train_loader):
             labels = torch.tensor([label_mapping[label.item()] for label in labels])
             inputs, labels = inputs.to(device), labels.to(device)
@@ -49,9 +71,18 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
+            
+            _, predicted = torch.max(outputs.data, dim=1)
+            train_total += len(labels)
+            train_correct += accuracy_score(labels.cpu(), predicted.cpu(), normalize=False)
+            
             if batch_idx % report_batch == report_batch - 1:
                 print(f"[epoch {epoch}, batch {batch_idx}] loss: {running_loss / report_batch}")
                 running_loss = 0.0
+        
+        train_acc = train_correct / train_total
+        train_accuracies.append(train_acc)
+        
         model.eval()
         with torch.no_grad():
             correct = 0
@@ -65,12 +96,20 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
                 _, predicted = torch.max(outputs.data, dim=1)
                 total += len(labels)
                 correct += accuracy_score(labels.cpu(), predicted.cpu(), normalize=False)
-        acc = correct / total
-        print(f"Accuracy on test set: {acc}; Loss on test set: {test_loss / len(test_loader)}")
-        if acc > max_acc:
-            max_acc = acc
+        
+        val_acc = correct / total
+        val_accuracies.append(val_acc)
+        print(f"Epoch {epoch}: Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}")
+        
+        if val_acc > max_acc:
+            max_acc = val_acc
             max_acc_epoch = epoch
             torch.save(model.state_dict(), os.path.join(args.output_dir, f'{args.model}_s{args.subject}_1x_22.pth'))
+    
+    if args.plot:
+        plot_path = os.path.join(args.output_dir, f'{args.model}_s{args.subject}_accuracy_plot.png')
+        plot_accuracies(train_accuracies, val_accuracies, max_acc_epoch, plot_path)
+    
     return max_acc, max_acc_epoch
 
 
@@ -84,6 +123,7 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--subject", default=0, type=int, help="subject from 0 to 15")
     parser.add_argument("-o", "--output_dir", required=True, help="directory to save results")
     parser.add_argument("--use_cv", action="store_true", help="use cross-validation for simple models (default: False)")
+    parser.add_argument("--plot", action="store_true", help="save a plot of training and validation accuracies (default: False)")
     args = parser.parse_args()
     print(args)
     print('Loading dataset...')
