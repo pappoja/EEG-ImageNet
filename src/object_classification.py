@@ -12,6 +12,7 @@ from model.simple_model import SimpleModel
 from model.eegnet import EEGNet
 from model.mlp import MLP
 from model.rgnn import RGNN, get_edge_weight
+from model.lstm import LSTM
 from utilities import *
 
 
@@ -25,6 +26,8 @@ def model_init(args, if_simple, num_classes, device):
     elif args.model.lower() == 'rgnn':
         edge_index, edge_weight = get_edge_weight()
         _model = RGNN(device, 62, edge_weight, edge_index, 5, 200, num_classes, 2)
+    elif args.model.lower() == 'lstm':
+        _model = LSTM(args, num_classes)
     else:
         raise ValueError(f"Couldn't find the model {args.model}")
     return _model
@@ -195,6 +198,15 @@ if __name__ == '__main__':
             train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()
+            optimizer = optim.Adam(model.parameters(), lr=1e-3)
+            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
+                                    labels)
+        elif args.model.lower() == 'lstm':
+            dataset.use_frequency_feat = False
+            train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
+            test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
+            criterion = torch.nn.CrossEntropyLoss()
+            # optimizer = optim.SGD(model.parameters(), lr=1e-4, weight_decay=1e-4, momentum=0.9)
             optimizer = optim.Adam(model.parameters(), lr=1e-3)
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
                                     labels)

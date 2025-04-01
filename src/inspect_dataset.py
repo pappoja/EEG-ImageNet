@@ -65,7 +65,7 @@ def plot_eeg_samples(dataset, num_samples=5, random_seed=0, category=None):
         first_cat_option = category_name.split(maxsplit=1)[-1].split(",")[0].strip()
         
         # Customize plot
-        ax.set_title(f'Sample EEG Recording (category = {first_cat_option})')
+        ax.set_title(f'Sample EEG Recording (category = {first_cat_option}, subject = {args.subject})')
         ax.set_xlabel('Time (ms)')
         ax.set_ylabel('Amplitude of Electrode')
         ax.grid(True, alpha=0.3)
@@ -98,7 +98,7 @@ def print_dataset_stats(dataset):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Inspect EEG-ImageNet dataset')
     parser.add_argument("-d", "--dataset_dir", required=True, help="directory name of EEG-ImageNet dataset path")
-    parser.add_argument("-g", "--granularity", default="coarse", help="choose from coarse, fine0-fine4 and all")
+    parser.add_argument("-g", "--granularity", default="all", help="choose from coarse, fine0-fine4 and all")
     parser.add_argument("-s", "--subject", default=0, type=int, help="subject from 0 to 15")
     parser.add_argument("-n", "--num_samples", default=3, type=int, help="number of random samples to plot")
     parser.add_argument("-c", "--category", help="filter by (partial) category name or exact synset ID")
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     output_dir = "../output/data_inspection"
     os.makedirs(output_dir, exist_ok=True)
     
-    output_file = f"{output_dir}/eeg_samples_s{args.subject}_{args.granularity}.png"
+    output_file = f"{output_dir}/eeg_sample_s{args.subject}.png"
     fig.savefig(output_file)
     print(f"\nPlot saved as: {output_file}")
     plt.close()
