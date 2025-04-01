@@ -53,7 +53,7 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
     max_acc = 0.0
     max_acc_epoch = -1
     report_batch = len(train_loader) / 2
-    
+
     train_accuracies = []
     val_accuracies = []
     
@@ -113,7 +113,7 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
         else:
             epochs_without_improvement += 1
             if epochs_without_improvement >= patience:
-                print(f"\nEarly stopping triggered! No improvement for {patience} epochs.")
+                print(f"\nEarly stopping...")
                 break
     
     if args.plot:
@@ -171,7 +171,7 @@ if __name__ == '__main__':
         y_pred = model.predict(test_feat)
         acc = accuracy_score(test_labels, y_pred)
         print('Test accuracy:', acc)
-        with open(os.path.join(args.output_dir, "simple_results.txt"), "a") as f:
+        with open(os.path.join(args.output_dir, "results.txt"), "a") as f:
             f.write(f"{args.model.upper()} Test Accuracy: {acc} (subject={args.subject}, granularity={args.granularity})")
             f.write("\n")
     else:
@@ -198,6 +198,6 @@ if __name__ == '__main__':
             optimizer = optim.Adam(model.parameters(), lr=1e-3)
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
                                     labels)
-        with open(os.path.join(args.output_dir, "dl_results.txt"), "a") as f:
+        with open(os.path.join(args.output_dir, "results.txt"), "a") as f:
             f.write(f"{args.model.upper()} Test Accuracy: {acc} (epoch={epoch}, subject={args.subject}, granularity={args.granularity})")
             f.write("\n")
