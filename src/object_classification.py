@@ -57,6 +57,10 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
     train_accuracies = []
     val_accuracies = []
     
+    # Early stopping parameters
+    patience = 20
+    epochs_without_improvement = 0
+    
     for epoch in tqdm(range(num_epochs)):
         model.train()
         train_correct = 0
@@ -104,7 +108,13 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
         if val_acc > max_acc:
             max_acc = val_acc
             max_acc_epoch = epoch
+            epochs_without_improvement = 0
             torch.save(model.state_dict(), os.path.join(args.output_dir, f'{args.model}_s{args.subject}_1x_22.pth'))
+        else:
+            epochs_without_improvement += 1
+            if epochs_without_improvement >= patience:
+                print(f"\nEarly stopping triggered! No improvement for {patience} epochs.")
+                break
     
     if args.plot:
         plot_path = os.path.join(args.output_dir, f'{args.model}_s{args.subject}_accuracy_plot.png')
