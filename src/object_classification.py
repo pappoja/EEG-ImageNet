@@ -213,9 +213,10 @@ if __name__ == '__main__':
             dataset.use_temporal_feat = True
             train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
+            print("Input shape: ", train_dataloader.dataset[0][0].shape)
             criterion = torch.nn.CrossEntropyLoss()
             # optimizer = optim.SGD(model.parameters(), lr=1e-4, weight_decay=1e-4, momentum=0.9)
-            optimizer = optim.Adam(model.parameters(), lr=1e-3)
+            optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
                                     labels)
         with open(os.path.join(args.output_dir, "results.txt"), "a") as f:

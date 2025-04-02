@@ -36,23 +36,55 @@ def de_feat_temp(eeg_data, args):
     # Define EEG channel names
     channel_names = [f'EEG{i}' for i in range(1, 63)]
     info = mne.create_info(ch_names=channel_names, sfreq=1000, ch_types='eeg')
-    eeg_data = eeg_data[:, :, 40:440]
+    
+    # Convert EEG data into MNE epochs
     _epochs = mne.EpochsArray(data=eeg_data, info=info)
 
     de_feat_list = []
     
+    # PSD Parameters
+    n_fft = 256  # Window size in samples
+    n_per_seg = n_fft  # Use same size for segment
+    n_overlap = n_per_seg // 2  # 50% overlap
+    n_freqs = 20  # Target number of frequency points
+    
     for f_min, f_max in FREQ_BANDS.values():
-        # Compute power spectral density (PSD) for the given frequency band
-        spectrum = _epochs.compute_psd(fmin=f_min, fmax=f_max)
+        # Compute PSD over time windows
+        spectrum = _epochs.compute_psd(
+            fmin=f_min,
+            fmax=f_max,
+            method='welch',
+            n_fft=n_fft,
+            n_per_seg=n_per_seg,
+            n_overlap=n_overlap,
+            average='mean',
+            window='hann'
+        )
         psd = spectrum.get_data() + 1e-10  # Avoid log(0)
 
-        # Compute differential entropy (log of PSD without summing over time)
-        diff_entropy = np.log(psd)  # Shape: (trials, channels, time_steps)
-
+        # Get frequency points for this band
+        freqs = spectrum.freqs
+        
+        # Interpolate to fixed number of frequency points
+        from scipy.interpolate import interp1d
+        x_old = np.linspace(0, 1, len(freqs))
+        x_new = np.linspace(0, 1, n_freqs)
+        
+        # Initialize array for interpolated data
+        interpolated = np.zeros((psd.shape[0], psd.shape[1], n_freqs))
+        
+        # Interpolate each trial and channel
+        for i in range(psd.shape[0]):
+            for j in range(psd.shape[1]):
+                f = interp1d(x_old, psd[i, j], kind='linear')
+                interpolated[i, j] = f(x_new)
+        
+        # Compute differential entropy
+        diff_entropy = np.log(interpolated)
         de_feat_list.append(diff_entropy)
     
-    # Stack features across frequency bands, maintaining the time dimension
-    _de_feat = np.concatenate(de_feat_list, axis=1)  # Shape: (trials, channels * bands, time_steps)
+    # Stack features across frequency bands
+    _de_feat = np.concatenate(de_feat_list, axis=1)  # Shape: (trials, channels * bands, n_freqs)
 
     # Save and return the processed features
     np.save(save_path, _de_feat)
