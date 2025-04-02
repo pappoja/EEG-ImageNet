@@ -7,7 +7,7 @@ from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 from dataset import EEGImageNetDataset
-from de_feat_cal import de_feat_cal
+from de_feat_cal import de_feat_cal, de_feat_temp
 from model.simple_model import SimpleModel
 from model.eegnet import EEGNet
 from model.mlp import MLP
@@ -39,7 +39,7 @@ def plot_accuracies(train_accs, val_accs, max_val_acc_epoch, save_path):
     plt.plot(epochs, train_accs, 'b-', label='Training Accuracy')
     plt.plot(epochs, val_accs, 'r-', label='Validation Accuracy')
     plt.axvline(x=max_val_acc_epoch + 1, color='black', linestyle='--', label=f'Best Val Acc ({max(val_accs):.2%})')
-    plt.title(f'{args.model.lower()}: Training vs. Validation Accuracy (Subject {args.subject})')
+    plt.title(f'{args.model.upper()}: Training vs. Validation Accuracy (Subject {args.subject}, {args.granularity})')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
@@ -143,13 +143,21 @@ if __name__ == '__main__':
     dataset = EEGImageNetDataset(args)
     eeg_data = np.stack([i[0].numpy() for i in dataset], axis=0)
     print('EEG data loaded with shape:', eeg_data.shape)
-    # extract frequency domain features
+
+    # Extract frequency domain features
     de_feat = de_feat_cal(eeg_data, args)
     print('Differential entropy features calculated, shape:', de_feat.shape)
     dataset.add_frequency_feat(de_feat)
     print('Frequency features added')
+
+    # Extract temporal domain features
+    de_temp = de_feat_temp(eeg_data, args)
+    print('Temporal differential entropy features calculated, shape:', de_temp.shape)
+    dataset.add_temporal_feat(de_temp)
+    print('Temporal features added')
     labels = np.array([i[1] for i in dataset])
     print('Labels shape:', labels.shape)
+
     # 60-40 train-test split (first 30 images=train, last 20 images=test)
     train_index = np.array([i for i in range(len(dataset)) if i % 50 < 30])
     test_index = np.array([i for i in range(len(dataset)) if i % 50 > 29])
@@ -159,13 +167,13 @@ if __name__ == '__main__':
     simple_model_list = ['svm', 'rf', 'knn', 'dt', 'ridge']
     if_simple = args.model.lower() in simple_model_list
     # device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # ADDED
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model_init(args, if_simple, len(dataset) // 50, device)
     if args.pretrained_model:
         model.load_state_dict(torch.load(os.path.join(args.output_dir, str(args.pretrained_model))))
     if if_simple:
-        cv_mode = "with cross-validation" if args.use_cv else "without cross-validation"
-        print(f'Training {args.model} model {cv_mode}...')
+        cv_mode = " with cross-validation" if args.use_cv else ""
+        print(f'Training {args.model} model{cv_mode}...')
         train_labels = labels[train_index]
         test_labels = labels[test_index]
         train_feat = de_feat[train_index]
@@ -202,7 +210,7 @@ if __name__ == '__main__':
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
                                     labels)
         elif args.model.lower() == 'lstm':
-            dataset.use_frequency_feat = False
+            dataset.use_temporal_feat = True
             train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()
@@ -211,5 +219,5 @@ if __name__ == '__main__':
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
                                     labels)
         with open(os.path.join(args.output_dir, "results.txt"), "a") as f:
-            f.write(f"{args.model.upper()} Test Accuracy: {acc} (epoch={epoch}, subject={args.subject}, granularity={args.granularity})")
+            f.write(f"{args.model.upper()} Test Accuracy: {acc} (subject={args.subject}, granularity={args.granularity})")
             f.write("\n")

@@ -30,6 +30,8 @@ class EEGImageNetDataset(Dataset):
                          i['granularity'] == 'fine' and self.labels.index(i['label']) in fine_category_range]
         self.use_frequency_feat = False
         self.frequency_feat = None
+        self.use_temporal_feat = False
+        self.temporal_feat = None
         self.use_image_label = False
 
     def __getitem__(self, index):
@@ -47,6 +49,8 @@ class EEGImageNetDataset(Dataset):
             label = self.labels.index(self.data[index]["label"])
         if self.use_frequency_feat:
             feat = self.frequency_feat[index]
+        elif self.use_temporal_feat:
+            feat = self.temporal_feat[index]
         else:
             eeg_data = self.data[index]["eeg_data"].float()
             feat = eeg_data[:, 40:440]
@@ -60,3 +64,9 @@ class EEGImageNetDataset(Dataset):
             self.frequency_feat = torch.from_numpy(feat).float()
         else:
             raise ValueError("Frequency features must have same length")
+
+    def add_temporal_feat(self, feat):
+        if len(feat) == len(self.data):
+            self.temporal_feat = torch.from_numpy(feat).float()
+        else:
+            raise ValueError("Temporal features must have same length")
