@@ -50,7 +50,7 @@ def plot_accuracies(train_accs, val_accs, max_val_acc_epoch, save_path):
     plt.savefig(save_path)
     plt.close()
 
-def model_main(args, model, train_loader, test_loader, criterion, optimizer, num_epochs, device, labels):
+def model_main(args, model, train_loader, test_loader, criterion, optimizer, num_epochs, patience, device, labels):
     model = model.to(device)
     unique_labels = torch.from_numpy(labels).unique()
     label_mapping = {original_label.item(): new_label for new_label, original_label in enumerate(unique_labels)}
@@ -64,7 +64,6 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
     val_accuracies = []
     
     # Early stopping parameters
-    patience = 20
     epochs_without_improvement = 0
     
     for epoch in tqdm(range(num_epochs)):
@@ -195,7 +194,7 @@ if __name__ == '__main__':
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()
             optimizer = optim.SGD(model.parameters(), lr=1e-2, weight_decay=1e-3, momentum=0.9)
-            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
+            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, 200, device,
                                     labels)
         elif args.model.lower() == 'mlp':
             dataset.use_frequency_feat = True
@@ -203,7 +202,7 @@ if __name__ == '__main__':
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()
             optimizer = optim.SGD(model.parameters(), lr=1e-4, weight_decay=1e-4, momentum=0.9)
-            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
+            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, 200, device,
                                     labels)
         elif args.model.lower() == 'mlplus':
             dataset.use_frequency_feat = True
@@ -211,7 +210,7 @@ if __name__ == '__main__':
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()
             optimizer = optim.SGD(model.parameters(), lr=1e-4, weight_decay=1e-4, momentum=0.9)
-            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
+            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, 200, device,
                                     labels)
         elif args.model.lower() == 'rgnn':
             dataset.use_frequency_feat = True
@@ -219,7 +218,7 @@ if __name__ == '__main__':
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()
             optimizer = optim.Adam(model.parameters(), lr=1e-3)
-            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
+            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, 200, device,
                                     labels)
         with open(os.path.join(args.output_dir, "results.txt"), "a") as f:
             f.write(f"{args.model.upper()} Test Accuracy: {acc} (subject={args.subject}, granularity={args.granularity})")
