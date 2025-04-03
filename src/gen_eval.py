@@ -13,7 +13,8 @@ from dataset import EEGImageNetDataset
 from model.mlp_sd import MLPMapper
 from utilities import *
 
-device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = CLIPTokenizer.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="tokenizer",
                                           local_files_only=True)
 text_encoder = CLIPTextModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="text_encoder",

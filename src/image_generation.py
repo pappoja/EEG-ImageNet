@@ -76,7 +76,8 @@ if __name__ == '__main__':
     train_subset = Subset(dataset, train_index)
     test_subset = Subset(dataset, test_index)
 
-    device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model_init(args, device)
     clip_embeddings = torch.load(os.path.join(args.output_dir, "clip_embeddings.pth"))
     if args.pretrained_model:

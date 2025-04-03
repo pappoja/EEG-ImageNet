@@ -11,6 +11,7 @@ from de_feat_cal import de_feat_cal, de_feat_temp
 from model.simple_model import SimpleModel
 from model.eegnet import EEGNet
 from model.mlp import MLP
+from model.mlplus import MLPlus
 from model.rgnn import RGNN, get_edge_weight
 from model.lstm import LSTM
 from utilities import *
@@ -23,6 +24,8 @@ def model_init(args, if_simple, num_classes, device):
         _model = EEGNet(args, num_classes)
     elif args.model.lower() == 'mlp':
         _model = MLP(args, num_classes)
+    elif args.model.lower() == 'mlplus':
+        _model = MLPlus(args, num_classes)
     elif args.model.lower() == 'rgnn':
         edge_index, edge_weight = get_edge_weight()
         _model = RGNN(device, 62, edge_weight, edge_index, 5, 200, num_classes, 2)
@@ -151,10 +154,11 @@ if __name__ == '__main__':
     print('Frequency features added')
 
     # Extract temporal domain features
-    de_temp = de_feat_temp(eeg_data, args)
-    print('Temporal differential entropy features calculated, shape:', de_temp.shape)
-    dataset.add_temporal_feat(de_temp)
-    print('Temporal features added')
+    # de_temp = de_feat_temp(eeg_data, args)
+    # print('Temporal differential entropy features calculated, shape:', de_temp.shape)
+    # dataset.add_temporal_feat(de_temp)
+    # print('Temporal features added')
+
     labels = np.array([i[1] for i in dataset])
     print('Labels shape:', labels.shape)
 
@@ -201,22 +205,20 @@ if __name__ == '__main__':
             optimizer = optim.SGD(model.parameters(), lr=1e-4, weight_decay=1e-4, momentum=0.9)
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
                                     labels)
+        elif args.model.lower() == 'mlplus':
+            dataset.use_frequency_feat = True
+            train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
+            test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
+            criterion = torch.nn.CrossEntropyLoss()
+            optimizer = optim.SGD(model.parameters(), lr=1e-4, weight_decay=1e-4, momentum=0.9)
+            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
+                                    labels)
         elif args.model.lower() == 'rgnn':
             dataset.use_frequency_feat = True
             train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()
             optimizer = optim.Adam(model.parameters(), lr=1e-3)
-            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
-                                    labels)
-        elif args.model.lower() == 'lstm':
-            dataset.use_temporal_feat = True
-            train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
-            test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
-            print("Input shape: ", train_dataloader.dataset[0][0].shape)
-            criterion = torch.nn.CrossEntropyLoss()
-            # optimizer = optim.SGD(model.parameters(), lr=1e-4, weight_decay=1e-4, momentum=0.9)
-            optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, device,
                                     labels)
         with open(os.path.join(args.output_dir, "results.txt"), "a") as f:
