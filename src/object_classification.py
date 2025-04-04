@@ -7,7 +7,7 @@ from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 from dataset import EEGImageNetDataset
-from de_feat_cal import de_feat_cal, de_feat_temp
+from de_feat_cal import de_feat_cal, temp_feat
 from model.simple_model import SimpleModel
 from model.eegnet import EEGNet
 from model.mlp import MLP
@@ -153,10 +153,10 @@ if __name__ == '__main__':
     print('Frequency features added')
 
     # Extract temporal domain features
-    # de_temp = de_feat_temp(eeg_data, args)
-    # print('Temporal differential entropy features calculated, shape:', de_temp.shape)
-    # dataset.add_temporal_feat(de_temp)
-    # print('Temporal features added')
+    temp = temp_feat(eeg_data, args)
+    print('Temporal differential entropy features calculated, shape:', temp.shape)
+    dataset.add_temporal_feat(temp)
+    print('Temporal features added')
 
     labels = np.array([i[1] for i in dataset])
     print('Labels shape:', labels.shape)
@@ -218,6 +218,14 @@ if __name__ == '__main__':
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()
             optimizer = optim.Adam(model.parameters(), lr=1e-3)
+            acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, 200, device,
+                                    labels)
+        elif args.model.lower() == 'lstm':
+            dataset.use_temporal_feat = True  # Activate wavelet-based temporal features
+            train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
+            test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
+            criterion = torch.nn.CrossEntropyLoss()
+            optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, 200, device,
                                     labels)
         with open(os.path.join(args.output_dir, "results.txt"), "a") as f:

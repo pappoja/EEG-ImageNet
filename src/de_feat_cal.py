@@ -1,6 +1,8 @@
 import numpy as np
 import os
 import mne
+import pywt
+from scipy.signal import resample
 from utilities import *
 
 
@@ -27,65 +29,46 @@ def de_feat_cal(eeg_data, args):
         np.save(os.path.join('../data/de_feat/', f"{args.subject}_{args.granularity}_de.npy"), _de_feat)
         return _de_feat
 
-def de_feat_temp(eeg_data, args):
-    save_path = os.path.join('../data/de_feat_temp/', f"{args.subject}_{args.granularity}_de.npy")
-    
+def temp_feat(eeg_data, args):
+    save_path = os.path.join('../data/temp_feat/', f"{args.subject}_{args.granularity}_wavelet.npy")
     if os.path.exists(save_path):
         return np.load(save_path)
-    
-    # Define EEG channel names
-    channel_names = [f'EEG{i}' for i in range(1, 63)]
-    info = mne.create_info(ch_names=channel_names, sfreq=1000, ch_types='eeg')
-    
-    # Convert EEG data into MNE epochs
-    _epochs = mne.EpochsArray(data=eeg_data, info=info)
 
-    de_feat_list = []
-    
-    # PSD Parameters
-    n_fft = 256  # Window size in samples
-    n_per_seg = n_fft  # Use same size for segment
-    n_overlap = n_per_seg // 2  # 50% overlap
-    n_freqs = 20  # Target number of frequency points
-    
-    for f_min, f_max in FREQ_BANDS.values():
-        # Compute PSD over time windows
-        spectrum = _epochs.compute_psd(
-            fmin=f_min,
-            fmax=f_max,
-            method='welch',
-            n_fft=n_fft,
-            n_per_seg=n_per_seg,
-            n_overlap=n_overlap,
-            average='mean',
-            window='hann'
-        )
-        psd = spectrum.get_data() + 1e-10  # Avoid log(0)
+    n_trials, n_channels, n_times = eeg_data.shape
+    sampling_rate = 1000  # Hz
 
-        # Get frequency points for this band
-        freqs = spectrum.freqs
-        
-        # Interpolate to fixed number of frequency points
-        from scipy.interpolate import interp1d
-        x_old = np.linspace(0, 1, len(freqs))
-        x_new = np.linspace(0, 1, n_freqs)
-        
-        # Initialize array for interpolated data
-        interpolated = np.zeros((psd.shape[0], psd.shape[1], n_freqs))
-        
-        # Interpolate each trial and channel
-        for i in range(psd.shape[0]):
-            for j in range(psd.shape[1]):
-                f = interp1d(x_old, psd[i, j], kind='linear')
-                interpolated[i, j] = f(x_new)
-        
-        # Compute differential entropy
-        diff_entropy = np.log(interpolated)
-        de_feat_list.append(diff_entropy)
-    
-    # Stack features across frequency bands
-    _de_feat = np.concatenate(de_feat_list, axis=1)  # Shape: (trials, channels * bands, n_freqs)
+    # Frequencies of interest (e.g., EEG bands: delta to gamma)
+    freq_bands = {
+        "delta": (1, 4),
+        "theta": (4, 8),
+        "alpha": (8, 13),
+        "beta": (13, 30),
+        "gamma": (30, 50)
+    }
 
-    # Save and return the processed features
-    np.save(save_path, _de_feat)
-    return _de_feat
+    # Prepare output array: [trials, channels * bands, time]
+    n_bands = len(freq_bands)
+    wavelet_features = []
+
+    for trial in range(n_trials):
+        trial_feat = []
+        for ch in range(n_channels):
+            signal = eeg_data[trial, ch, :]
+            ch_feat = []
+
+            for band, (fmin, fmax) in freq_bands.items():
+                center_freq = (fmin + fmax) / 2
+                scale = pywt.central_frequency('cmor1.5-1.0') * sampling_rate / center_freq
+                coef, _ = pywt.cwt(signal, [scale], 'cmor1.5-1.0', sampling_period=1.0 / sampling_rate)
+                power = np.abs(coef[0])  # Power from complex coefficients
+                ch_feat.append(power)
+            
+            trial_feat.append(np.stack(ch_feat, axis=0))  # [bands, time]
+        
+        trial_feat = np.stack(trial_feat, axis=0)  # [channels, bands, time]
+        trial_feat = trial_feat.reshape(n_channels * n_bands, n_times)  # Flatten channels*bands
+        wavelet_features.append(trial_feat)
+    
+    wavelet_features = np.stack(wavelet_features, axis=0)  # [trials, chans*bands, time]
+    np.save(save_path, wavelet_features)
+    return wavelet_features
