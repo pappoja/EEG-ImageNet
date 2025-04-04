@@ -71,7 +71,7 @@ def plot_eeg_samples(dataset, num_samples=5, random_seed=0, category=None):
         ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    return fig
+    return fig, first_cat_option
 
 def print_dataset_stats(dataset):
     """Print statistics about the dataset."""
@@ -117,13 +117,14 @@ if __name__ == '__main__':
         print(f"Dataset loaded with {len(dataset)} samples")
     
     # Plot samples
-    fig = plot_eeg_samples(dataset, args.num_samples, args.seed, args.category)
+    fig, category = plot_eeg_samples(dataset, args.num_samples, args.seed, args.category)
+    category = category.replace(" ", "_").lower()
     
     # Create output directory and save plot
     output_dir = "../output/data_inspection"
     os.makedirs(output_dir, exist_ok=True)
     
-    output_file = f"{output_dir}/eeg_sample_s{args.subject}.png"
+    output_file = f"{output_dir}/eeg_samples_s{args.subject}_{category}.png"
     fig.savefig(output_file)
     print(f"\nPlot saved as: {output_file}")
     plt.close()
