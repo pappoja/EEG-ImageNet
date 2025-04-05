@@ -50,18 +50,44 @@ def plot_accuracies(train_accs, val_accs, max_val_acc_epoch, save_path):
     plt.savefig(save_path)
     plt.close()
 
-def model_main(args, model, train_loader, test_loader, criterion, optimizer, num_epochs, patience, device, labels):
+def model_main(args, model, train_loader, test_loader, criterion, optimizer, num_epochs, patience, device, labels, subset_trial=False):
     model = model.to(device)
     unique_labels = torch.from_numpy(labels).unique()
     label_mapping = {original_label.item(): new_label for new_label, original_label in enumerate(unique_labels)}
     inverse_label_mapping = {v: k for k, v in label_mapping.items()}
+
+    train_accuracies = []
+    val_accuracies = []
+
+    if subset_trial:
+        print("Running subset overfit trial...")
+
+        # Grab one batch from the train_loader
+        subset = next(iter(train_loader))
+        x, y = subset
+        y = torch.tensor([label_mapping[label.item()] for label in y])
+        x, y = x.to(device), y.to(device)
+
+        for step in range(num_epochs//4):  # or set num_epochs to small number
+            model.train()
+            optimizer.zero_grad()
+            outputs = model(x)
+            loss = criterion(outputs, y)
+            loss.backward()
+            optimizer.step()
+
+            _, predicted = torch.max(outputs.data, dim=1)
+            acc = accuracy_score(y.cpu(), predicted.cpu())
+            if step % 100 == 0:
+                print(f"Step {step}: Loss = {loss.item():.4f}, Acc = {acc:.4f}")
+
+        print("Final Subset Accuracy:", acc)
+        return acc, 0
+    
     running_loss = 0.0
     max_acc = 0.0
     max_acc_epoch = -1
     report_batch = len(train_loader) / 2
-
-    train_accuracies = []
-    val_accuracies = []
     
     # Early stopping parameters
     epochs_without_improvement = 0
@@ -153,10 +179,10 @@ if __name__ == '__main__':
     print('Frequency features added')
 
     # Extract temporal domain features
-    temp = temp_feat(eeg_data, args)
-    print('Temporal differential entropy features calculated, shape:', temp.shape)
-    dataset.add_temporal_feat(temp)
-    print('Temporal features added')
+    # temp = temp_feat(eeg_data, args)
+    # print('Temporal differential entropy features calculated, shape:', temp.shape)
+    # dataset.add_temporal_feat(temp)
+    # print('Temporal features added')
 
     labels = np.array([i[1] for i in dataset])
     print('Labels shape:', labels.shape)
@@ -221,7 +247,7 @@ if __name__ == '__main__':
             acc, epoch = model_main(args, model, train_dataloader, test_dataloader, criterion, optimizer, 1000, 200, device,
                                     labels)
         elif args.model.lower() == 'lstm':
-            dataset.use_temporal_feat = True  # Activate wavelet-based temporal features
+            dataset.use_temporal_feat = True
             train_dataloader = DataLoader(train_subset, batch_size=args.batch_size, shuffle=True)
             test_dataloader = DataLoader(test_subset, batch_size=args.batch_size, shuffle=False)
             criterion = torch.nn.CrossEntropyLoss()

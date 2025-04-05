@@ -15,11 +15,12 @@ class SimpleModel:
         if self.model_type == 'svm':
             self.base_model = SVC(probability=True)
             self.param_grid = {
-                'kernel': ['linear', 'rbf'],
-                'C': [0.1, 1.0, 10.0],
+                'kernel': ['linear', 'poly', 'rbf'],
+                'C': [0.001, 0.05, 0.1, 1.0],
+                'degree': [2, 3, 4],
             }
             # Default (best) parameters
-            self.default_params = {'kernel': 'linear', 'C': 0.1}
+            self.default_params = {'kernel': 'linear', 'C': 0.1, 'degree': 3}
             
         elif self.model_type == 'rf':
             self.base_model = RandomForestClassifier(n_estimators=200)

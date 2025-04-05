@@ -10,13 +10,14 @@ class MLPlus(nn.Module):
         self.chans = chans
         input_dim = chans * 5
 
-        self.l1 = nn.Linear(input_dim, 64)
-        self.bn1 = nn.BatchNorm1d(64)
-        self.l2 = nn.Linear(64, 64)
-        self.bn2 = nn.BatchNorm1d(64)
-        self.l3 = nn.Linear(64, 64)
-        self.bn3 = nn.BatchNorm1d(64)
-        self.l4 = nn.Linear(64, num_classes)
+        self.l1 = nn.Linear(input_dim, 256)
+        self.bn1 = nn.BatchNorm1d(256)
+        self.l2 = nn.Linear(256, 256)
+        self.bn2 = nn.BatchNorm1d(256)
+        self.l3 = nn.Linear(256, 128)
+        self.bn3 = nn.BatchNorm1d(128)
+        self.l4 = nn.Linear(128, num_classes)
+        
         self.dropout = nn.Dropout(dropout_rate)
 
     def forward(self, x):
