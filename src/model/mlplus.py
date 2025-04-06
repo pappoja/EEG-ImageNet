@@ -10,9 +10,9 @@ class MLPlus(nn.Module):
         self.chans = chans
         input_dim = chans * 5
 
-        self.l1 = nn.Linear(input_dim, 256)
-        self.bn1 = nn.BatchNorm1d(256)
-        self.l2 = nn.Linear(256, 256)
+        self.l1 = nn.Linear(input_dim, 512)
+        self.bn1 = nn.BatchNorm1d(512)
+        self.l2 = nn.Linear(512, 256)
         self.bn2 = nn.BatchNorm1d(256)
         self.l3 = nn.Linear(256, 128)
         self.bn3 = nn.BatchNorm1d(128)
