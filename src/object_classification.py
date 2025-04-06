@@ -42,7 +42,7 @@ def plot_accuracies(train_accs, val_accs, max_val_acc_epoch, save_path):
     plt.plot(epochs, train_accs, 'b-', label='Training Accuracy')
     plt.plot(epochs, val_accs, 'r-', label='Validation Accuracy')
     plt.axvline(x=max_val_acc_epoch + 1, color='black', linestyle='--', label=f'Best Val Acc ({max(val_accs):.2%})')
-    plt.title(f'{args.model.upper()}: Training vs. Validation Accuracy (Subject {args.subject}, {args.granularity})')
+    plt.title(f'{args.model}: Training vs. Validation Accuracy (Subject {args.subject}, {args.granularity})')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
