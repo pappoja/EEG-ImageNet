@@ -9,7 +9,7 @@ from sklearn.model_selection import GridSearchCV
 class SimpleModel:
     def __init__(self, args):
         self.model_type = args.model.lower()
-        self.use_cv = getattr(args, 'use_cv', True)  # Default to True for backward compatibility
+        self.use_cv = getattr(args, 'use_cv', True)
         
         # Define base models and their parameter grids
         if self.model_type == 'svm':

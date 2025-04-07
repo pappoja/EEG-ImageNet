@@ -26,7 +26,7 @@ def plot_eeg_samples(dataset, num_samples=5, random_seed=0, category=None):
             _, label = dataset[i]
             synset_id = dataset.labels[label]
             
-            # Match either synset ID or if search term is in the English category name
+            # Match either synset ID or the category name
             category_name = wnid2category(synset_id, 'en')
             if category == synset_id or (isinstance(category, str) and category.lower() in category_name.lower()):
                 filtered_indices.append(i)

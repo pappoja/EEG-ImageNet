@@ -68,7 +68,7 @@ def model_main(args, model, train_loader, test_loader, criterion, optimizer, num
         y = torch.tensor([label_mapping[label.item()] for label in y])
         x, y = x.to(device), y.to(device)
 
-        for step in range(num_epochs//4):  # or set num_epochs to small number
+        for step in range(num_epochs//4):
             model.train()
             optimizer.zero_grad()
             outputs = model(x)
