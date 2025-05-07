@@ -1,6 +1,6 @@
 # EEG-ImageNet-Dataset
 
-This is the official repository for the paper "**EEG-ImageNet: An Electroencephalogram Dataset and Benchmarks with Image Visual Stimuli of Multi-Granularity Labels**".
+This repository was cloned from that used for the paper "**EEG-ImageNet: An Electroencephalogram Dataset and Benchmarks with Image Visual Stimuli of Multi-Granularity Labels**".
 
 <img width="776" alt="image" src="https://github.com/user-attachments/assets/55ac9916-e6ff-4f27-afbe-21a5d8206df2">
 
